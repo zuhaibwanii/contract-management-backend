@@ -37,7 +37,6 @@ app.get('/health', (req, res) => {
 
 
 // Start server
-
 (async () => {
   try {
     await testSupabaseConnection()

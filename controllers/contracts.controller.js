@@ -17,26 +17,17 @@ const getAllContracts = async (req, res) => {
 
         const offset = (page - 1) * limit;
 
-        // Start building the query
         let query = supabase
             .from('contracts')
             .select('*', { count: 'exact' })
             .eq('active', true);
 
-        // Apply filters if provided
-        if (status) {
-            query = query.eq('status', status);
-        }
+        if (status) query = query.eq('status', status);
+        if (client_name)  query = query.ilike('client_name', `%${client_name}%`);
+        if (contract_id)  query = query.eq('contract_id', contract_id);
+        
 
-        if (client_name) {
-            query = query.ilike('client_name', `%${client_name}%`);
-        }
-
-        if (contract_id) {
-            query = query.eq('contract_id', contract_id);
-        }
-
-        // Apply pagination
+        // Pagination
         const { data, error, count } = await query
             .range(offset, offset + limit - 1)
             .order('created_at', { ascending: false });
@@ -68,13 +59,8 @@ const getContractById = async (req, res) => {
             .eq('contract_id', contract_id)
             .single();
 
-        if (error) {
-            throw error;
-        }
-
-        if (!data) {
-            return res.status(404).json({ error: 'Contract not found' });
-        }
+        if (error) throw error;
+        if (!data) return res.status(404).json({ error: 'Contract not found' });
 
         res.json(data);
     } catch (error) {
@@ -90,9 +76,7 @@ const createContract = async (req, res) => {
 
         // Validate required fields
         if (!client_name || !content) {
-            return res.status(400).json({
-                error: 'Missing required fields: client_name, and content are required'
-            });
+            return res.status(400).json({ error: 'Missing required fields: client_name, and content are required' });
         }
 
         const { data, error } = await supabase
@@ -105,9 +89,8 @@ const createContract = async (req, res) => {
             }])
             .select();
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
+        
 
         // Emit socket event for real-time update
         io.emit('contract:created', data[0]);
@@ -125,10 +108,8 @@ const updateContract = async (req, res) => {
         const { contract_id } = req.params;
         const { client_name, content, status } = req.body;
 
-        // Create an update object with only the fields that are provided
         const updateData = {};
         if (client_name !== undefined) updateData.client_name = client_name;
-        // if (contract_id !== undefined) updateData.contract_id = contract_id;
         if (content !== undefined) updateData.content = content;
         if (status !== undefined) updateData.status = status;
 
@@ -142,14 +123,9 @@ const updateContract = async (req, res) => {
             .eq('contract_id', contract_id)
             .select();
 
-        if (error) {
-            throw error;
-        }
-
-        if (!data || data.length === 0) {
-            return res.status(404).json({ error: 'Contract not found' });
-        }
-
+        if (error) throw error;
+        if (!data || data.length === 0) return res.status(404).json({ error: 'Contract not found' });
+        
         // Emit socket event for real-time update
         io.emit('contract:updated', data[0]);
 
@@ -172,10 +148,7 @@ const deleteContract = async (req, res) => {
             .select();
 
         if (error) throw error;
-
-
         if (!data || data.length === 0) return res.status(404).json({ error: 'Contract not found' });
-
 
         // Emit socket event for real-time update
         io.emit('contract:deleted', { contract_id: parseInt(contract_id) });

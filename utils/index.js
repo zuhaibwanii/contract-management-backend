@@ -19,7 +19,6 @@ const supabase = require('../services/supabase');
 //   else console.log('Table created or already exists')
 // }
 
-// Optional: Test connection during startup
 async function testSupabaseConnection() {
   try {
     console.log('🤞Trying to connect Supabase...');
@@ -28,7 +27,6 @@ async function testSupabaseConnection() {
     console.log('✅Supabase connection established successfully');
   } catch (err) {
     console.error('💥Failed to connect to Supabase:', err);
-    // Decide whether to exit or continue based on your requirements
   }
 }
 
